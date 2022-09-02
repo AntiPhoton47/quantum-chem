@@ -1,1 +1,1 @@
-# quantum-chem
+A Python program that computes the electronic densities and binding energies for isolated neutral atoms from an orbital-free density functional scheme based on polymer self-consistent field theory. The program uses a basis function expansion method to convert the model equations into a spectral form, where the basis functions are a product of radial Gaussians and real spherical harmonics.
