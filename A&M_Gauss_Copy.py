@@ -276,7 +276,7 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
 
     free = F_ke + F_ee + F_xc + F_p
     print('Free Energy Terms:\n Kinetic: {a0} | Electron-Electron: {a1} | Self-Interaction: {a2} | Pauli: {a3}'.format(a0=F_ke, a1=F_ee, a2=F_xc, a3=F_p))
-    print('Potential Energy Terms:\n Electron-Electron: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3}'.format(a0=repr(U_c_pair), a1=repr(U_ee_pair), a2=repr(U_xc_pair), a3=repr(U_p_pair)))
+    print('Potential Energy Terms:\n Electron-Nucleus: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3}'.format(a0=repr(U_c_pair), a1=repr(U_ee_pair), a2=repr(U_xc_pair), a3=repr(U_p_pair)))
 
     entropy = b*(kin_en+U_c-F_ee-F_xc-F_p-free)  # Total entropy.
     print('Entropy: {}'.format(entropy))
