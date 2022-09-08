@@ -1,4 +1,4 @@
-function kron_delta(i, j) result(kd) ! Kronecker delta function.
+function kron_delta(i, j) result(kd)
 
     implicit none
     integer, intent(in) :: i, j
@@ -20,7 +20,7 @@ function step_func(x) result(hev)
 
 end function step_func
 
-subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt)
+subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt) ! One-Way Schulten-Gordon-Cruzan algorithm to calculate the integral of three spherical harmonics.
 
     implicit none
     integer, parameter :: dp=kind(0.d0)
@@ -30,6 +30,7 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt)
     real(dp) :: pi=4*atan(1.0_dp), A, A1, B, K, K1, gnt1, gnt2, gnt3, gnt3_temp
     real(dp), intent(out) :: gnt
 
+    ! Apply the angular momentum selection rules to speedup the algorithm.
     gnt = 0.0_dp
     if ((l1 < abs(m1)) .or. (l2 < abs(m2)) .or. (l3 < abs(m3))) then
         gnt = 0.0_dp
@@ -45,6 +46,7 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt)
         gnt = 0.0_dp
     else
 
+        ! Compute all factorials needed beforehand and store the results in a list.
         fact(0) = 1
         do i=1, l1+l2+l3
             fact(i) = fact(i-1)*i
@@ -57,6 +59,7 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt)
                 m2)))
         gnt3 = 2*(l2*m1-l1*m2)*gnt2*sqrt((2*(l1+l2)+1.0_dp)/((2*l1)*(2*l2)*(l1+l2-m3)*(l1+l2+m3)))
 
+        ! If l3 = l2 + l1 or l3 = |l2-l1|, calculate the Wigner 3-j symbols from a special value of the reccurence relations.
         if (l2+l1 == l3) then
             gnt = gnt1*gnt2*sqrt(((2*l1+1)*(2*l2+1)*(2*l3+1))/(4*pi))
         else if (l2-l1 == l3) then
@@ -74,6 +77,7 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt)
                     fact(l2+m2)*fact(l2-m2)))
             gnt = gnt1*gnt2*sqrt(((2*l1+1)*(2*l2+1)*(2*l3+1))/(4*pi))
         else
+        ! Recursively calculate the Wigner 3-j symbols starting from l3 = l2 + l1.
             l3t = l2+l1-1
             l3t1 = l2+l1
             !B = -(2*l3t+1)*(l1*(l1+1)*m3-l2*(l2+1)*m3-l3t*(l3t+1)*(m2-m1t))
@@ -103,8 +107,8 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt)
 
 end subroutine gaunt
 
-subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt)
-
+subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt) ! Algorithm to calculate the integral of three real spherical harmonics, by treating the real
+                                                         ! spherical harmonics as a unitary transformation of the standard spherical harmonics.
     implicit none
     integer, parameter :: dp=kind(0.d0)
     integer, intent(in) :: l1, l2, l3, m1, m2, m3
@@ -113,6 +117,7 @@ subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt)
     complex(dp) :: U1, U2, U3
     real(dp), intent(out) :: ugnt
 
+    ! Apply the angular momentum selection rules to speedup the algorithm.
     if ((l1 < abs(m1)) .or. (l2 < abs(m2)) .or. (l3 < abs(m3))) then
         ugnt = 0.0_dp
     else if (mod(l1+l2+l3, 2) /= 0) then
@@ -124,6 +129,7 @@ subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt)
     else if (-l1+l2+l3 < 0) then
         ugnt = 0.0_dp
     else
+        ! Compute unitary transformation matrices.
         do i=-l1, l1
             U1 = complex(kron_delta(abs(m1), abs(i))*kron_delta(i, 0)*kron_delta(m1, 0)+kron_delta(abs(m1), abs(i))*&
                     step_func(m1)*(kron_delta(i, m1)+(-1)**i*kron_delta(i, -m1))/sqrt(2.0_dp), kron_delta(abs(m1)&
