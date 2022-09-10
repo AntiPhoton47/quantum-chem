@@ -26,7 +26,8 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt) ! One-Way Schulten-Gordon-Cruzan a
     integer, parameter :: dp=kind(0.d0)
     integer, intent(in) :: l1, l2, l3, m1, m2, m3
     integer :: l3t, l3t1, i
-    integer(kind=16) :: fact(0:l1+l2+l3)
+    !integer(kind=16) :: fact(0:l1+l2+l3)
+    real(dp) :: logfact(0:l1+l2+l3)
     real(dp) :: pi=4*atan(1.0_dp), A, A1, B, K, K1, gnt1, gnt2, gnt3, gnt3_temp
     real(dp), intent(out) :: gnt
 
@@ -46,35 +47,55 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt) ! One-Way Schulten-Gordon-Cruzan a
         gnt = 0.0_dp
     else
 
-        ! Compute all factorials needed beforehand and store the results in a list.
-        fact(0) = 1
+        ! Compute all logarithms of factorials needed beforehand and store the results in a list.
+        logfact(0) = 0 ! add if statement to use regular factorials for smaller angular values
+        !fact(0) = 1
         do i=1, l1+l2+l3
-            fact(i) = fact(i-1)*i
+            !fact(i) = fact(i-1)*i
+            logfact(i) = logfact(i-1) + log(real(i, dp))
         end do
+        ! Compute initial values for recursion, using exp(log()) of the result to control overflow.
+        gnt1 = (-1)**(l2-l1)*exp((logfact(l1+l2)-logfact(l1)-logfact(l2)+log_gamma(l1+0.5_dp)+&
+                log_gamma(l2+0.5_dp)-log_gamma(l1+l2+0.5_dp))/2)/sqrt(sqrt(pi)*(2*(l1+l2)+1))
+        gnt2 = (-1)**(l2-l1+m3)*exp((-logfact(l1+l2)+logfact(l1)+logfact(l2)+logfact(l1+l2+m3)+logfact(l1+l2-m3)&
+                -logfact(l1+m1)-logfact(l1-m1)-logfact(l2+m2)-logfact(l2-m2)+log_gamma(l1+0.5_dp)&
+                +log_gamma(l2+0.5_dp)-log_gamma(l1+l2+0.5_dp))/2)/sqrt(sqrt(pi)*(2*(l1+l2)+1))
 
-        gnt1 = (-1)**(l2-l1)*sqrt((fact(l1+l2)*gamma(l1+0.5_dp)*gamma(l2+0.5_dp))/&
-                (sqrt(pi)*fact(l1)*fact(l2)*(2*(l1+l2)+1)*gamma(l1+l2+0.5_dp)))
-        gnt2 = (-1)**(l2-l1+m3)*sqrt((fact(l1)*fact(l2)*gamma(l1+0.5_dp)*gamma(l2+0.5_dp)*fact(l1+l2+m3)*fact(l1+l2-m3)&
-                )/(sqrt(pi)*fact(l1+l2)*(2*(l1+l2)+1)*gamma(l1+l2+0.5_dp)*fact(l1+m1)*fact(l1-m1)*fact(l2+m2)*fact(l2-&
-                m2)))
+        !gnt1 = (-1)**(l2-l1)*sqrt((fact(l1+l2)*gamma(l1+0.5_dp)*gamma(l2+0.5_dp))/&
+        !        (sqrt(pi)*fact(l1)*fact(l2)*(2*(l1+l2)+1)*gamma(l1+l2+0.5_dp)))
+        !gnt2 = (-1)**(l2-l1+m3)*sqrt((fact(l1)*fact(l2)*gamma(l1+0.5_dp)*gamma(l2+0.5_dp)*fact(l1+l2+m3)*fact(l1+l2-m3)&
+        !        )/(sqrt(pi)*fact(l1+l2)*(2*(l1+l2)+1)*gamma(l1+l2+0.5_dp)*fact(l1+m1)*fact(l1-m1)*fact(l2+m2)*fact(l2-&
+        !        m2)))
         gnt3 = 2*(l2*m1-l1*m2)*gnt2*sqrt((2*(l1+l2)+1.0_dp)/((2*l1)*(2*l2)*(l1+l2-m3)*(l1+l2+m3)))
 
         ! If l3 = l2 + l1 or l3 = |l2-l1|, calculate the Wigner 3-j symbols from a special value of the reccurence relations.
         if (l2+l1 == l3) then
             gnt = gnt1*gnt2*sqrt(((2*l1+1)*(2*l2+1)*(2*l3+1))/(4*pi))
         else if (l2-l1 == l3) then
-            gnt1 = (-1)**(2*l1+l2)*sqrt((fact(l2)*gamma(l1+0.5_dp)*gamma(l2-l1+0.5_dp))/&
-                    (sqrt(pi)*fact(l2-l1)*fact(l1)*(2*l2+1)*gamma(l2+0.5_dp)))
-            gnt2 = (-1)**(2*l1+m1+m3+l2)*sqrt((fact(l1)*fact(l2-l1)*gamma(l1+0.5_dp)*gamma(l2-l1+0.5_dp)*fact(l2+m2)*&
-                    fact(l2-m2))/(sqrt(pi)*fact(l2)*(2*l2+1)*gamma(l2+0.5_dp)*fact(l2-l1+m3)*fact(l2-l1-m3)*&
-                    fact(l1+m1)*fact(l1-m1)))
+            gnt1 = (-1)**(l2+2*l1)*exp((logfact(l2)-logfact(l1)-logfact(l2-l1)+log_gamma(l1+0.5_dp)+&
+                    log_gamma(l2-l1+0.5_dp)-log_gamma(l2+0.5_dp))/2)/sqrt(sqrt(pi)*(2*l2+1))
+            gnt2 = (-1)**(l2+2*l1+m1+m3)*exp((logfact(l2-l1)+logfact(l1)+logfact(l2+m2)+logfact(l2-m2)-logfact(l2)&
+                    -logfact(l2-l1+m3)-logfact(l2-l1-m3)-logfact(l1+m1)-logfact(l1-m1)+log_gamma(l1+0.5_dp)&
+                    +log_gamma(l2-l1+0.5_dp)-log_gamma(l2+0.5_dp))/2)/sqrt(sqrt(pi)*(2*l2+1))
+
+            !gnt1 = (-1)**(2*l1+l2)*sqrt((fact(l2)*gamma(l1+0.5_dp)*gamma(l2-l1+0.5_dp))/&
+            !        (sqrt(pi)*fact(l2-l1)*fact(l1)*(2*l2+1)*gamma(l2+0.5_dp)))
+            !gnt2 = (-1)**(2*l1+m1+m3+l2)*sqrt((fact(l1)*fact(l2-l1)*gamma(l1+0.5_dp)*gamma(l2-l1+0.5_dp)*fact(l2+m2)*&
+            !        fact(l2-m2))/(sqrt(pi)*fact(l2)*(2*l2+1)*gamma(l2+0.5_dp)*fact(l2-l1+m3)*fact(l2-l1-m3)*&
+            !        fact(l1+m1)*fact(l1-m1)))
             gnt = gnt1*gnt2*sqrt(((2*l1+1)*(2*l2+1)*(2*l3+1))/(4*pi))
         else if (l1-l2 == l3) then
-            gnt1 = (-1)**(2*l2-l1)*sqrt((fact(l1)*gamma(l2+0.5_dp)*gamma(l1-l2+0.5_dp))/&
-                    (sqrt(pi)*fact(l1-l2)*fact(l2)*(2*l1+1)*gamma(l1+0.5_dp)))
-            gnt2 = (-1)**(2*l2+m2+m3-l1)*sqrt((fact(l2)*fact(l1-l2)*gamma(l2+0.5_dp)*gamma(l1-l2+0.5_dp)*fact(l1+m1)*&
-                    fact(l1-m1))/(sqrt(pi)*fact(l1)*(2*l1+1)*gamma(l1+0.5_dp)*fact(l1-l2+m3)*fact(l1-l2-m3)*&
-                    fact(l2+m2)*fact(l2-m2)))
+            gnt1 = (-1)**(2*l2-l1)*exp((logfact(l1)-logfact(l2)-logfact(l1-l2)+log_gamma(l2+0.5_dp)+&
+                    log_gamma(l1-l2+0.5_dp)-log_gamma(l1+0.5_dp))/2)/sqrt(sqrt(pi)*(2*l1+1))
+            gnt2 = (-1)**(2*l2-l1+m2+m3)*exp((logfact(l1-l2)+logfact(l2)+logfact(l1+m1)+logfact(l1-m1)-logfact(l1)&
+                    -logfact(l1-l2+m3)-logfact(l1-l2-m3)-logfact(l2+m2)-logfact(l2-m2)+log_gamma(l2+0.5_dp)&
+                    +log_gamma(l1-l2+0.5_dp)-log_gamma(l1+0.5_dp))/2)/sqrt(sqrt(pi)*(2*l1+1))
+
+            !gnt1 = (-1)**(2*l2-l1)*sqrt((fact(l1)*gamma(l2+0.5_dp)*gamma(l1-l2+0.5_dp))/&
+            !        (sqrt(pi)*fact(l1-l2)*fact(l2)*(2*l1+1)*gamma(l1+0.5_dp)))
+            !gnt2 = (-1)**(2*l2+m2+m3-l1)*sqrt((fact(l2)*fact(l1-l2)*gamma(l2+0.5_dp)*gamma(l1-l2+0.5_dp)*fact(l1+m1)*&
+            !        fact(l1-m1))/(sqrt(pi)*fact(l1)*(2*l1+1)*gamma(l1+0.5_dp)*fact(l1-l2+m3)*fact(l1-l2-m3)*&
+            !        fact(l2+m2)*fact(l2-m2)))
             gnt = gnt1*gnt2*sqrt(((2*l1+1)*(2*l2+1)*(2*l3+1))/(4*pi))
         else
         ! Recursively calculate the Wigner 3-j symbols starting from l3 = l2 + l1.
@@ -82,8 +103,10 @@ subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt) ! One-Way Schulten-Gordon-Cruzan a
             l3t1 = l2+l1
             !B = -(2*l3t+1)*(l1*(l1+1)*m3-l2*(l2+1)*m3-l3t*(l3t+1)*(m2-m1t))
             do while ((l3t > abs(l2-l1)) .and. (l3t /= l3))
-                A = sqrt(real((l3t**2-m3**2)*(l3t**2-(l1-l2)**2)*((l1+l2+1)**2-l3t**2), dp))
-                A1 = sqrt(real(((l3t+1)**2-m3**2)*((l3t+1)**2-(l1-l2)**2)*((l1+l2+1)**2-(l3t+1)**2), dp))
+                A = sqrt(real((l3t**2-m3**2), dp))*sqrt(real((l3t**2-(l1-l2)**2), dp))*&
+                        sqrt(real(((l1+l2+1)**2-l3t**2), dp))
+                A1 = sqrt(real(((l3t+1)**2-m3**2), dp))*sqrt(real(((l3t+1)**2-(l1-l2)**2), dp))*&
+                        sqrt(real(((l1+l2+1)**2-(l3t+1)**2), dp))
                 B = (2*l3t+1)*(l1*(l1+1)*m3-l2*(l2+1)*m3+l3t*(l3t+1)*(m1-m2))
                 gnt3_temp = gnt3
                 gnt3 = (B*gnt3 - l3t*A1*gnt2)/((l3t+1)*A)
