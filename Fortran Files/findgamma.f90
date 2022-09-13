@@ -20,6 +20,17 @@ function step_func(x) result(hev)
 
 end function step_func
 
+function odd_neg(x) result(oneg)
+
+    implicit none
+    integer, intent(in) :: x
+    integer :: oneg
+
+    oneg = 0
+    if (x < 0) oneg = 1
+
+end function odd_neg
+
 subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt) ! One-Way Schulten-Gordon-Cruzan algorithm to calculate the integral of three spherical harmonics.
 
     implicit none
@@ -135,7 +146,7 @@ subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt) ! Algorithm to calculat
     implicit none
     integer, parameter :: dp=kind(0.d0)
     integer, intent(in) :: l1, l2, l3, m1, m2, m3
-    integer :: i, j, k, kron_delta, step_func
+    integer :: i, j, k, kron_delta, step_func, odd_neg, lmin
     real(dp) :: gauntval, sumgnt
     complex(dp) :: U1, U2, U3
     real(dp), intent(out) :: ugnt
@@ -143,28 +154,38 @@ subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt) ! Algorithm to calculat
     ! Apply the angular momentum selection rules to speedup the algorithm.
     if (mod(l1+l2+l3, 2) /= 0) then
         ugnt = 0.0_dp
-    else
-        ! Compute unitary transformation matrices.
-        do i=-l1, l1
-            U1 = complex(kron_delta(abs(m1), abs(i))*kron_delta(i, 0)*kron_delta(m1, 0)+kron_delta(abs(m1), abs(i))*&
-                    step_func(m1)*(kron_delta(i, m1)+(-1)**i*kron_delta(i, -m1))/sqrt(2.0_dp), kron_delta(abs(m1)&
-                    , abs(i))*step_func(-m1)*(-kron_delta(i, m1)*(-1)**(i-m1)+kron_delta(i, -m1)*(-1)**(-m1))/&
-                    sqrt(2.0_dp))
-            do j=-l2, l2
-                U2 = complex(kron_delta(abs(m2), abs(j))*kron_delta(j, 0)*kron_delta(m2, 0)+kron_delta(abs(m2), abs(j))&
-                        *step_func(m2)*(kron_delta(j, m2)+(-1)**j*kron_delta(j, -m2))/sqrt(2.0_dp), kron_delta(&
-                        abs(m2), abs(j))*step_func(-m2)*(-kron_delta(j, m2)*(-1)**(j-m2)+kron_delta(j, -m2)*(-1)&
-                        **(-m2))/sqrt(2.0_dp))
-                U3 = complex(kron_delta(abs(m3), abs(-i-j))*kron_delta(-i-j, 0)*kron_delta(m3, 0)+kron_delta(abs(m3),&
-                        abs(-i-j))*step_func(m3)*(kron_delta(-i-j, m3)+(-1)**(-i-j)*kron_delta(-i-j, -m3))/sqrt(&
-                        2.0_dp), kron_delta(abs(m3), abs(-i-j))*step_func(-m3)*(-kron_delta(-i-j, m3)*(-1)**(-i-j&
-                        -m3)+kron_delta(-i-j, -m3)*(-1)**(-m3))/sqrt(2.0_dp))
-                call gaunt(l1, l2, l3, i, j, -i-j, gauntval)
-                sumgnt = sumgnt + real(U1*U2*U3)*gauntval
-            end do
-        end do
-        ugnt = sumgnt
+        return
     end if
+    if (mod(sum([odd_neg(m1), odd_neg(m2), odd_neg(m3)]), 2) /= 0) then
+        ugnt = 0.0_dp
+        return
+    end if
+    lmin = max(abs(l2 - l3), min(abs(m2 + m3), abs(m2 - m3)))
+    if (mod(lmin+l2+l3, 2) == 0) lmin = lmin + 1
+    if all(l1 /= [(i, i=lmin,l2+l3,2)]) then
+        ugnt = 0.0_dp
+        return
+    end if
+    ! Compute unitary transformation matrices.
+    do i=-l1, l1
+        U1 = complex(kron_delta(abs(m1), abs(i))*kron_delta(i, 0)*kron_delta(m1, 0)+kron_delta(abs(m1), abs(i))*&
+                step_func(m1)*(kron_delta(i, m1)+(-1)**i*kron_delta(i, -m1))/sqrt(2.0_dp), kron_delta(abs(m1)&
+                , abs(i))*step_func(-m1)*(-kron_delta(i, m1)*(-1)**(i-m1)+kron_delta(i, -m1)*(-1)**(-m1))/&
+                sqrt(2.0_dp))
+        do j=-l2, l2
+            U2 = complex(kron_delta(abs(m2), abs(j))*kron_delta(j, 0)*kron_delta(m2, 0)+kron_delta(abs(m2), abs(j))&
+                    *step_func(m2)*(kron_delta(j, m2)+(-1)**j*kron_delta(j, -m2))/sqrt(2.0_dp), kron_delta(&
+                    abs(m2), abs(j))*step_func(-m2)*(-kron_delta(j, m2)*(-1)**(j-m2)+kron_delta(j, -m2)*(-1)&
+                    **(-m2))/sqrt(2.0_dp))
+            U3 = complex(kron_delta(abs(m3), abs(-i-j))*kron_delta(-i-j, 0)*kron_delta(m3, 0)+kron_delta(abs(m3),&
+                    abs(-i-j))*step_func(m3)*(kron_delta(-i-j, m3)+(-1)**(-i-j)*kron_delta(-i-j, -m3))/sqrt(&
+                    2.0_dp), kron_delta(abs(m3), abs(-i-j))*step_func(-m3)*(-kron_delta(-i-j, m3)*(-1)**(-i-j&
+                    -m3)+kron_delta(-i-j, -m3)*(-1)**(-m3))/sqrt(2.0_dp))
+            call gaunt(l1, l2, l3, i, j, -i-j, gauntval)
+            sumgnt = sumgnt + real(U1*U2*U3)*gauntval
+        end do
+    end do
+    ugnt = sumgnt
 
 end subroutine unit_real_gaunt
 
