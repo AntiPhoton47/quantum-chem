@@ -29,7 +29,7 @@ function odd_neg(x) result(oneg)
     oneg = 0
     if (x < 0) oneg = 1
 
-end function step_func
+end function odd_neg
 
 subroutine gaunt(l1, l2, l3, m1, m2, m3, gnt) ! One-Way Schulten-Gordon-Cruzan algorithm to calculate the integral of three spherical harmonics.
 
