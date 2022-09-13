@@ -162,7 +162,7 @@ subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt) ! Algorithm to calculat
     end if
     lmin = max(abs(l2 - l3), min(abs(m2 + m3), abs(m2 - m3)))
     if (mod(lmin+l2+l3, 2) == 0) lmin = lmin + 1
-    if all(l1 /= [(i, i=lmin,l2+l3,2)]) then
+    if (all(l1 /= [(i, i=lmin,l2+l3,2)])) then
         ugnt = 0.0_dp
         return
     end if
