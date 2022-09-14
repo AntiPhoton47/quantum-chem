@@ -152,21 +152,15 @@ subroutine unit_real_gaunt(l1, l2, l3, m1, m2, m3, ugnt) ! Algorithm to calculat
     real(dp), intent(out) :: ugnt
 
     ! Apply the angular momentum selection rules to speedup the algorithm.
-    if (mod(l1+l2+l3, 2) /= 0) then
-        ugnt = 0.0_dp
-        return
-    end if
-    if (mod(sum([odd_neg(m1), odd_neg(m2), odd_neg(m3)]), 2) /= 0) then
-        ugnt = 0.0_dp
-        return
-    end if
+    ugnt = 0.0_dp
+    if (mod(l1+l2+l3, 2) /= 0) return
+    if (mod(odd_neg(m1)+odd_neg(m2)+odd_neg(m3), 2) /= 0) return
     lmin = max(abs(l2 - l3), min(abs(m2 + m3), abs(m2 - m3)))
     if (mod(lmin+l2+l3, 2) /= 0) lmin = lmin + 1
-    if (all(l1 /= [(i, i=lmin,l2+l3,2)])) then
-        ugnt = 0.0_dp
-        return
-    end if
+    if (all(l1 /= [(i, i=lmin,l2+l3,2)])) return
+    
     ! Compute unitary transformation matrices.
+    sumgnt = 0.0_dp
     do i=-l1, l1
         U1 = complex(kron_delta(abs(m1), abs(i))*kron_delta(i, 0)*kron_delta(m1, 0)+kron_delta(abs(m1), abs(i))*&
                 step_func(m1)*(kron_delta(i, m1)+(-1)**i*kron_delta(i, -m1))/sqrt(2.0_dp), kron_delta(abs(m1)&
