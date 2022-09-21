@@ -1,19 +1,25 @@
-Take note of your operating system and which compilers you have available to you. 
-Then identify which Fortran compiler you have installed on your machine and locate 
-your copy of Fortran and Python. 
-
-For example my operating system is Windows 10, my main C compiler is the MSC v.1920 compiler,
-and my main Fortran compiler is the GFortran compiler. I have Python 3.9.5 (64-bit) installed
-and Fortran 95 installed through the MSYS2 collection.
+Take note of your operating system and which compilers you have available to you, 
+then identify which Fortran compiler you have installed on your machine and locate 
+your copy of Fortran and Python. Also, it is highly recommended that you have NumPy
+installed so you can use the built-in `f2py` Fortran wrapping module, and make your
+life so much easier.
 
 To create the Python modules that result from wrapping the Fortran subroutines using f2py,
-using the above configuration, first open the command terminal and change directories to where
-the source files of your version of Python are installed. Next enter the line
+using a Python 3+ configuration on Windows, first open the command terminal and change
+directories to where the source files of your version of Python are installed. Next enter
+the line
 
-python -m numpy.f2py -c -m "output module name" "path to Fortran file" --compiler=msvc --fcompiler=gnu95 --f90exec="C:\msys64\mingw64\bin\gfortran.exe" --f90flags="-Ofast"
+`python -m numpy.f2py -c -m "Output Module Name" "Path to Fortran File" --compiler="Preferred C Compiler" --fcompiler="Preferred Fortran Compiler" --f90exec="Path to Fortran Compiler" --f90flags="-Ofast"`
 
-after choosing an output module name, inputting the path to the directory where you placed the
-Fortran files, and modifying the Fortran compiler path if you need to. This will create a folder
-containing a .pyd file and a dll file that you must copy into the same directory that your Python
-installation is located under (I would copy the files into the folder with all the other dll files).
-If all goes well, you should be able to run the program without any issues.
+after choosing an output module name, inputting the path to the directory where you placed 
+the Fortran files, choosing the C compiler that your distribution of Python was compiled with, 
+selecting a Fortran compiler, and selecting the Fortran compiler path; note that the '-Ofast'
+flag tells Fortran to optimize the compilation and can be simply removed without any side
+effects. An example would be
+
+`python -m numpy.f2py -c -m gammatensor "C:\Users\Owner\Research Programs\findgamma.f90" --compiler=msvc --fcompiler=gnu95 --f90exec="C:\msys64\mingw64\bin\gfortran.exe" --f90flags="-Ofast"`
+
+The above command will create a folder containing a .pyd file and a dll file that you must copy
+into the same directory that your Python installation is located under (I would copy the files
+into the folder with all the other dll files). If all goes well, you should be able to run the
+program without any issues.
