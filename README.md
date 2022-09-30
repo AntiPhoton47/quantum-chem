@@ -14,11 +14,12 @@ Aditionally, the program requires the following external Python modules to be in
 - PyVista
 
 ## Citing
-If you find this program useful in your research, and you would like to acknowledge it in a journal publication, it is recommended to cite the following paper:
+If you find this program useful in your research, and you would like to acknowledge it in a journal publication, it is recommended to cite one of the following papers:
 > P. A. LeMaitre and R. B. Thompson, ``Gaussian Basis Functions for a Polymer Self-Consistent Field Theory of Atoms''. arXiv:2208.09078 [physics.atom-ph] (2022).
 
+> P. A. LeMaitre and R. B. Thompson, ``On the Origins of Spontaneous Spherical Symmetry-Breaking in Open-Shell Atoms Through Polymer Self-Consistent Field Theory''. arXiv:2209.14507 [quant-ph] (2022).
 
-Here is an example BibTeX entry:
+Here are example BibTeX entries:
 ```
 @misc{LeMaitre_Thompson2022,
   author  = {P. A. LeMaitre and R. B. Thompson},
@@ -27,6 +28,13 @@ Here is an example BibTeX entry:
   year    = {(2022)},
   url  = {https://arxiv.org/abs/2208.09078},
   doi = {10.48550/ARXIV.2208.09078}
+}
+@misc{LeMaitre_Thompson2022ang,
+  author  = {P. A. LeMaitre and R. B. Thompson},
+  title   = {On the Origins of Spontaneous Spherical Symmetry-Breaking in Open-Shell Atoms Through Polymer Self-Consistent Field Theory},
+  publisher = {arXiv},
+  year    = {(2022)},
+  url  = {https://arxiv.org/abs/2209.14507}
 }
 ```
 ## Contributing
