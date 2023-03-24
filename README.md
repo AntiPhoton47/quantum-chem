@@ -15,26 +15,29 @@ Aditionally, the program requires the following external Python modules to be in
 
 ## Citing
 If you find this program useful in your research, and you would like to acknowledge it in a journal publication, it is recommended to cite one of the following papers:
-> P. A. LeMaitre and R. B. Thompson, ``Gaussian Basis Functions for a Polymer Self-Consistent Field Theory of Atoms''. arXiv:2208.09078 [physics.atom-ph] (2022).
+> P. A. LeMaitre and R. B. Thompson, ``Gaussian Basis Functions for an Orbital-Free-Related Density Functional Theory of Atoms''. Int. J. Quantum Chem. e27111 (2023).
 
-> P. A. LeMaitre and R. B. Thompson, ``On the Origins of Spontaneous Spherical Symmetry-Breaking in Open-Shell Atoms Through Polymer Self-Consistent Field Theory''. arXiv:2209.14507 [quant-ph] (2022).
+> P. A. LeMaitre and R. B. Thompson, ``On the Origins of Spontaneous Spherical Symmetry-Breaking in Open-Shell Atoms Through Polymer Self-Consistent Field Theory''. J. Chem. Phys. 158 (6), 064301 (2023).
 
 Here are example BibTeX entries:
 ```
-@misc{LeMaitre_Thompson2022,
+@article{LeMaitre_Thompson2023,
   author  = {P. A. LeMaitre and R. B. Thompson},
-  title   = {Gaussian Basis Functions for a Polymer Self-Consistent Field Theory of Atoms},
-  publisher = {arXiv},
-  year    = {(2022)},
-  url  = {https://arxiv.org/abs/2208.09078},
-  doi = {10.48550/ARXIV.2208.09078}
+  title   = {Gaussian Basis Functions for an Orbital-Free-Related Density Functional Theory of Atoms},
+  journal = {Int. J. Quantum Chem.},
+  pages = {e27111},
+  year    = {(2023)},
+  url  = {https://onlinelibrary.wiley.com/doi/full/10.1002/qua.27111},
 }
-@misc{LeMaitre_Thompson2022ang,
+@article{LeMaitre_Thompson2023ang,
   author  = {P. A. LeMaitre and R. B. Thompson},
   title   = {On the Origins of Spontaneous Spherical Symmetry-Breaking in Open-Shell Atoms Through Polymer Self-Consistent Field Theory},
-  publisher = {arXiv},
-  year    = {(2022)},
-  url  = {https://arxiv.org/abs/2209.14507}
+  journal = {J. Chem. Phys.},
+  volume = {158},
+  number = {6},
+  pages = {064301},
+  year    = {(2023)},
+  url  = {https://aip.scitation.org/doi/10.1063/5.0131364}
 }
 ```
 ## Contributing
