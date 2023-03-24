@@ -273,12 +273,11 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
 
     prop_en_pair = -np.array([Ns[j]*sy.log(qshell[j]/Ns[j]) for j in range(Nsk)]).astype(np.float64)-position_entropies1  # Quantum kinetic entropy minus density-field integral per pair.
     elec_en = Ns*np.log(Ns)  # Electron number entropy per pair.
-    kin_en_R = -(np.array(sum([Ns[j]*sy.log(qshell[j]/Ns[j]) for j in range(Nsk)])).astype(np.float64)+np.sum(position_entropies1))/b+2.0*(F_xc+F_p+F_ee)-U_c  # Quantum kinetic energy.
     kin_en_R_pair = prop_en_pair/b-2.0*(U_xc_pair+U_p_pair+U_ee_pair)-U_c_pair  # Quantum kinetic energy per pair.
     kin_en = -0.5*np.einsum('ij,ji -> ', np.sum(rdensshell_q, axis=0), L)  # Total kinetic energy.
 
     print('Kinetic Energy: {}'.format(kin_en))
-    print('Configurational Entropy: {}'.format(b*kin_en_R))
+    print('Configurational Entropy: {}'.format(b*np.sum(kin_en_R_pair)))
     print('Configurational Entropy per Pair: {}'.format(repr(b*kin_en_R_pair)))
     print('Translational Entropy per Pair: {}'.format(repr(position_entropies1-elec_en)))
     print('Translational Entropy: {}'.format(np.sum(position_entropies1-elec_en)))
@@ -301,12 +300,12 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
         print('Shell {a0} Electron Number: {a1}'.format(a0=k+1, a1=enums[k]))
 
     print('Atomic Shell Configuration: {a0}'.format(a0=repr(Ns)))
-    print('Free Energy (N={a5}, beta={a0}, g0inv={a6}, l_num={a1}, c=[{a2}, {a3}]) : {a4}'.format(a0=np.around(b, decimals=3), a1=[l_num[i] for i in range(Lsk)], a2=[cvec[i][0] for i in range(Lsk)], a3=[cvec[i][-1] for i in range(Lsk)], a4=free, a5=N, a6=np.around(g0inv, decimals=2)))
+    print('Free Energy (N={a5}, beta={a0}, g0inv={a6}, l_num={a1}, c=[{a2}, {a3}]) : {a4}'.format(a0=np.around(b, decimals=3), a1=[l_num[i] for i in range(Lsk)], a2=[cvec[i][0] for i in range(Lsk)], a3=[cvec[i][-1] for i in range(Lsk)], a4=np.sum(F_pair), a5=N, a6=np.around(g0inv, decimals=2)))
     print('Convergence: {}'.format(devtot[0]))
     print('Real Space Convergence: {}'.format(realconv))
     print('Electron Number: {}'.format(enum))
 
-    return rdensshell, realns, realn, realwshell, realwnew, realwold, devtot, free, enum, enums, cvec, realconv, temp, cvt
+    return rdensshell, realns, realn, realwshell, realwnew, realwold, devtot, np.sum(F_pair), enum, enums, cvec, realconv, temp, cvt
 
 
 def anderson(dev, anders):  # Anderson matrix and vector definitions.
