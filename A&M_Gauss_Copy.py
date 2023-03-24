@@ -55,6 +55,8 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
     wb_init = np.array([np.zeros(i) for i in n])  # Initial field values.
     wb_append_shape = np.array([np.zeros(n[-1]+db[1][-1])])  # Initial field values to add-on for the next pair.
     temp_index = n
+    temp_andtol = andtol
+    temp_it = 0
     cvec = np.array([np.logspace(pvec[i, 0], pvec[i, 1], num=l_num[i]) for i in range(Lsk)])  # Gaussian exponents for each angular momentum value.
     cvt = np.hstack(np.array([np.tile(cvec[i], Msk[i]) for i in range(Lsk)]))  # Gaussian exponents repeated according to the number of m values corresponding to each angular momentum value.
     Gaussfunc = [Gauss(u, cvt[i], lvt[i], mvt[i]) for i in range(temp_index[0])]  # List of symbolically defined basis functions.
@@ -96,6 +98,8 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
     iter = 0
     dev1_path = 0
     dev2_path = 0
+    dev1_pathd = 0
+    dev2_pathd = 0
     wbshape = np.shape(wb)
     wold = np.zeros((anders+1, Nbase))  # Initialize field output histories.
 
@@ -141,6 +145,7 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
     rng_wold = np.ravel([ind_sh[j]*rng_wold_temp for j in range(Nsk)])  # Suppress desired pair components.
     wtot = wtot + rng_wold  # Add stochastic field to initial field guess to help find other solutions.
 
+    iter_and = 0
     wold_temp = np.array([wtot[i*temp_index[i]:(i+1)*temp_index[i]] for i in range(Nsk)])
     rdensshell = np.array([np.zeros(temp_index[i]) for i in range(Nsk)])
     rdensshell_q = np.array([np.zeros((temp_index[i], temp_index[i])) for i in range(Nsk)])
@@ -174,6 +179,8 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
         dev[0] = wnew-wold[0]  # New deviation functions.
         devshell = wshell - wold_temp
         if devtot[0] > tol2vals[A_nuc[0]-1]:  # Coarse convergence.
+            andtol = temp_andtol
+            temp_it = iter
             if iter == 0:
                 dev1_path = np.einsum_path('i,j,ij -> ', devshell[0], devshell[0], S, optimize='optimal')[0]
                 dev2_path = np.einsum_path('i,j,ij -> ', wshell[0], wshell[0], S, optimize='optimal')[0]
@@ -181,21 +188,27 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
             devtot_lower = np.abs(np.array([np.einsum('i,j,ij -> ', wshell[h], wshell[h], S, optimize=dev2_path) for h in range(Nsk)]))
         else:  # Fine convergence, using the density as a weighting factor.
             andtol = tol  # Turn off Anderson acceleration.
-            if iter == 0:
-                dev1_path = np.einsum_path('i,j,k,ijk -> ', devshell[0], devshell[0], rdensshell[0], Gamma, optimize='optimal')[0]
-                dev2_path = np.einsum_path('i,j,k,ijk -> ', wshell[0], wshell[0], rdensshell[0], Gamma, optimize='optimal')[0]
-            devtot_upper = np.abs(np.array([np.einsum('i,j,k,ijk -> ', devshell[h], devshell[h], rdensshell[h], Gamma, optimize=dev1_path) for h in range(Nsk)]))
-            devtot_lower = np.abs(np.array([np.einsum('i,j,k,ijk -> ', wshell[h], wshell[h], rdensshell[h], Gamma, optimize=dev2_path) for h in range(Nsk)]))
+            if iter == temp_it+1:
+                dev1_pathd = np.einsum_path('i,j,k,ijk -> ', devshell[0], devshell[0], rdensshell[0], Gamma, optimize='optimal')[0]
+                dev2_pathd = np.einsum_path('i,j,k,ijk -> ', wshell[0], wshell[0], rdensshell[0], Gamma, optimize='optimal')[0]
+            devtot_upper = np.abs(np.array([np.einsum('i,j,k,ijk -> ', devshell[h], devshell[h], rdensshell[h], Gamma, optimize=dev1_pathd) for h in range(Nsk)]))
+            devtot_lower = np.abs(np.array([np.einsum('i,j,k,ijk -> ', wshell[h], wshell[h], rdensshell[h], Gamma, optimize=dev2_pathd) for h in range(Nsk)]))
         devtot[0] = np.sqrt(np.sum(devtot_upper)/np.sum(devtot_lower))  # Spectral convergence criterion.
         perdevtot = abs((devtot[0]-devtot[1])/devtot[0])  # Percent deviation between iterations.
 
-        if (perdevtot < andtol and devtot[0] < devtol) and iter > anders:  # Decide whether to do an Anderson step.
-            wmix = wold[0]
-            avecmix = anderson(dev, anders)
-            wmix = wmix+np.sum((wold[1:anders+1] - wold[0])*np.vstack(avecmix), axis=0)
-            print('Anderson Step')
+        if iter_and < 20:
+            if (perdevtot < andtol and devtot[0] < devtol) and iter > anders:  # Decide whether to do an Anderson step.
+                wmix = wold[0]
+                avecmix = anderson(dev, anders)
+                wmix = wmix+np.sum((wold[1:anders+1] - wold[0])*np.vstack(avecmix), axis=0)
+                print('Anderson Step')
+                iter_and += 1
+            else:
+                wmix = mix*wnew+(1.0-mix)*wtot  # Simple Picard mixing.
+                iter_and = 0
         else:
             wmix = mix*wnew+(1.0-mix)*wtot  # Simple Picard mixing.
+            iter_and -= 1
 
         print('Iteration: {a0} | Spectral Convergence: {a1}'.format(a0=iter, a1=devtot[0]))
         if iter == int(0.4*itermax):  # Decrease tolerance values if iterations have gone on for too long.
@@ -203,27 +216,25 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
             tol2vals[A_nuc[0]-1] = 10*tol2vals[A_nuc[0]-1]
 
         # Update spectral field components.
-        wtot = wmix + step_mat[iter]*rng_wold
+        wtot = wmix + step_mat[iter]*rng.permutation(rng_wold)
         wold_temp = np.array([wtot[i*temp_index[i]:(i+1)*temp_index[i]] for i in range(Nsk)])
 
         iter += 1
 
-    # Free energy contributions from each interaction.
-    F_xc = -0.5*np.einsum('ik,ij,jk -> ', rdensshell, w_xcshell, S, optimize='greedy')
-    F_ee = -0.5*np.einsum('k,j,jk -> ', rdenstot, w_eeshell[0], S, optimize='greedy')
-    F_p = -0.5*np.einsum('ik,ij,jk -> ', rdensshell, w_pshell, S, optimize='greedy')
-    F_ke = -np.array(sum([Ns[j]*sy.log(qshell[j])/b for j in range(Nsk)])).astype(np.float64)
+    # Free energy contributions from each interaction per pair.
+    F_ke_pair = -np.array([Ns[j]*sy.log(qshell[j])/b for j in range(Nsk)]).astype(np.float64)
+    F_ee_pair = U_ee_pair-np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_eeshell[i], S, optimize='greedy') for i in range(Nsk)])
+    F_xc_pair = U_xc_pair-np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_xcshell[i], S, optimize='greedy') for i in range(Nsk)])
+    F_p_pair = U_p_pair-np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_pshell[i], S, optimize='greedy') for i in range(Nsk)])
 
     woldfunc = np.sum(np.array([np.sum(wtot[temp_index[i]*i:(i+1)*temp_index[i]]*Gaussfunc) for i in range(Nsk)]))
     wshellfunc = [np.sum(wnew[temp_index[i]*i:(i+1)*temp_index[i]]*Gaussfunc) for i in range(Nsk)]
 
-    U_c = np.einsum('k,j,jk -> ', rdenstot, w_cshell[0], S, optimize='greedy')  # Potential energy corresponding to electron-nucleus interactions.
     # Potential energies for each interaction per pair
     U_c_pair = np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_cshell[i], S, optimize='greedy') for i in range(Nsk)])
     U_p_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_pshell[i], S, optimize='greedy') for i in range(Nsk)])
     U_ee_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_eeshell[i], S, optimize='greedy') for i in range(Nsk)])
     U_xc_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_xcshell[i], S, optimize='greedy') for i in range(Nsk)])
-    #F_ke_pair = -np.array([Ns[j]*sy.log(qshell[j])/b for j in range(Nsk)]).astype(np.float64)
 
     # Lambda functions for density and field functions.
     temps = [np.sum(rdensshell[i]*Gaussfunc) for i in range(Nsk)]
@@ -267,21 +278,21 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
     kin_en = -0.5*np.einsum('ij,ji -> ', np.sum(rdensshell_q, axis=0), L)  # Total kinetic energy.
 
     print('Kinetic Energy: {}'.format(kin_en))
-    print('Potential Energy: {}'.format(np.sum(U_ee_pair+U_xc_pair+U_p_pair)+U_c))
-    print('Potential Energy per Pair: {}'.format(repr(U_ee_pair+U_xc_pair+U_p_pair+U_c_pair)))
     print('Configurational Entropy: {}'.format(b*kin_en_R))
     print('Configurational Entropy per Pair: {}'.format(repr(b*kin_en_R_pair)))
     print('Translational Entropy per Pair: {}'.format(repr(position_entropies1-elec_en)))
     print('Translational Entropy: {}'.format(np.sum(position_entropies1-elec_en)))
 
-    free = F_ke + F_ee + F_xc + F_p
-    print('Free Energy Terms:\n Kinetic: {a0} | Electron-Electron: {a1} | Self-Interaction: {a2} | Pauli: {a3}'.format(a0=F_ke, a1=F_ee, a2=F_xc, a3=F_p))
-    print('Potential Energy Terms:\n Electron-Nucleus: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3}'.format(a0=repr(U_c_pair), a1=repr(U_ee_pair), a2=repr(U_xc_pair), a3=repr(U_p_pair)))
+    deci = 5
+    F_pair = -(U_ee_pair+U_xc_pair+U_p_pair)+F_ke_pair+U_nuc_pair
+    U_pair = U_ee_pair+U_xc_pair+U_p_pair+U_c_pair+U_nuc_pair
+    print('Free Energy Terms:\n Kinetic: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3} \n Total: {a5}'.format(a0=repr(F_ke_pair), a1=repr(F_ee_pair), a2=repr(F_xc_pair), a3=repr(F_p_pair), a5=repr(F_pair)))
+    print('Potential Energy Terms:\n Electron-Nucleus: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3} \n Total: {a5}'.format(a0=repr(U_c_pair), a1=repr(U_ee_pair), a2=repr(U_xc_pair), a3=repr(U_p_pair), a5=repr(U_pair)))
 
     entropy = b*(kin_en+U_c-F_ee-F_xc-F_p-free)  # Total entropy.
     print('Entropy: {}'.format(entropy))
 
-    if np.all(np.isfinite([free, enum])) and np.all(np.isfinite(enums)):
+    if np.all(np.isfinite([np.sum(F_pair), enum])) and np.all(np.isfinite(enums)):
         np.savez(normpath('C:/Users/Owner/PycharmProjects/Research/Publication Data/Spherical Averaging/{a0}{a1}beta{a2}{a3}{a4}g0inv{a5}.npz').format(a0=atom, a1=n, a2=beta_prec_sav, a3=ver, a4=ver_field, a5=np.around(g0inv, decimals=2)), rdensshell=rdensshell, wb=wold_temp)  # Save results to a file.
 
     gend = time()
