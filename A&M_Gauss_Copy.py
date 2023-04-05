@@ -57,8 +57,8 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
     temp_index = n
     temp_andtol = andtol
     temp_it = 0
-    cvec = np.array([np.logspace(pvec[i, 0], pvec[i, 1], num=l_num[i]) for i in range(Lsk)])  # Gaussian exponents for each angular momentum value.
-    cvt = np.hstack(np.array([np.tile(cvec[i], Msk[i]) for i in range(Lsk)]))  # Gaussian exponents repeated according to the number of m values corresponding to each angular momentum value.
+    cvec = np.array([np.logspace(pvec[i, 0], pvec[i, 1], num=l_num[i]) for i in range(Lsk)], dtype='object')  # Gaussian exponents for each angular momentum value.
+    cvt = np.hstack(np.array([np.tile(cvec[i], Msk[i]) for i in range(Lsk)], dtype='object'))  # Gaussian exponents repeated according to the number of m values corresponding to each angular momentum value.
     Gaussfunc = [Gauss(u, cvt[i], lvt[i], mvt[i]) for i in range(temp_index[0])]  # List of symbolically defined basis functions.
     S = findoverlap(cvt, lvt, mvt, temp_index[0])  # Overlap matrix.
     L = findlaplace(cvt, lvt, mvt, temp_index[0])  # Laplace Matrix.
@@ -344,9 +344,9 @@ Lsk = np.size(l)  # Total number of atomic orbitals.
 Msk = [np.size(m[i]) for i in range(Lsk)]  # Total number of m values.
 l_num = np.array([175])+np.array(db_2)  # Number of basis functions for each atomic orbital.
 base_num = np.array([np.sum(Msk*l_num) for j in range(Nsk)])  # Number of basis functions for each Pauli pair.
-lvt = np.hstack(np.array([np.tile(l[i], l_num[i]*Msk[i]) for i in range(Lsk)]))  # Stacked angular momentum numbers for spherical harmonics corresponding to the total number of basis functions.
-mvt = np.hstack(np.array([np.hstack([np.tile(m[i][j], l_num[i]) for j in range(Msk[i])]) for i in range(Lsk)]))  # Stacked m values corresponding to the total number of basis functions.
-FA = np.array([[1, -np.ones(Nsk), 1, 0, 'Fukui'], [0, -1/Nshell, 0, 1, 'FAshell'], [0, -(1/N)*np.ones(Nsk), 1, 0, 'FA']])  # The first element is the Fukui function exchange-correlation field, the second is Fermi-Amaldi shell, and the third is standard Fermi-Amaldi.
+lvt = np.hstack(np.array([np.tile(l[i], l_num[i]*Msk[i]) for i in range(Lsk)], dtype='object'))  # Stacked angular momentum numbers for spherical harmonics corresponding to the total number of basis functions.
+mvt = np.hstack(np.array([np.hstack([np.tile(m[i][j], l_num[i]) for j in range(Msk[i])]) for i in range(Lsk)], dtype='object'))  # Stacked m values corresponding to the total number of basis functions.
+FA = np.array([[1, -np.ones(Nsk), 1, 0, 'Fukui'], [0, -1/Nshell, 0, 1, 'FAshell'], [0, -(1/N)*np.ones(Nsk), 1, 0, 'FA']], dtype='object')  # The first element is the Fukui function exchange-correlation field, the second is Fermi-Amaldi shell, and the third is standard Fermi-Amaldi.
 FAval = 1  #  Decides which exchange-correlation function to use.
 betaval = np.array([600.0])  # Beta (1/k_B*T) values.
 db = [0.0, [-np.sum([Msk[i]*db_2[i] for i in range(Lsk)]) for j in range(Nsk)], db_2]  # When importing data for SCFT run, these values compensate for any change in beta, Pauli pair basis number, or atomic orbital basis number respectively.
