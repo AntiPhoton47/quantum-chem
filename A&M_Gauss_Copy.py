@@ -221,6 +221,12 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
 
         iter += 1
 
+    # Potential energies for each interaction per pair
+    U_c_pair = np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_cshell[i], S, optimize='greedy') for i in range(Nsk)])
+    U_p_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_pshell[i], S, optimize='greedy') for i in range(Nsk)])
+    U_ee_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_eeshell[i], S, optimize='greedy') for i in range(Nsk)])
+    U_xc_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_xcshell[i], S, optimize='greedy') for i in range(Nsk)])    
+        
     # Free energy contributions from each interaction per pair.
     F_ke_pair = -np.array([Ns[j]*sy.log(qshell[j])/b for j in range(Nsk)]).astype(np.float64)
     F_ee_pair = U_ee_pair-np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_eeshell[i], S, optimize='greedy') for i in range(Nsk)])
@@ -229,12 +235,6 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
 
     woldfunc = np.sum(np.array([np.sum(wtot[temp_index[i]*i:(i+1)*temp_index[i]]*Gaussfunc) for i in range(Nsk)]))
     wshellfunc = [np.sum(wnew[temp_index[i]*i:(i+1)*temp_index[i]]*Gaussfunc) for i in range(Nsk)]
-
-    # Potential energies for each interaction per pair
-    U_c_pair = np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_cshell[i], S, optimize='greedy') for i in range(Nsk)])
-    U_p_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_pshell[i], S, optimize='greedy') for i in range(Nsk)])
-    U_ee_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_eeshell[i], S, optimize='greedy') for i in range(Nsk)])
-    U_xc_pair = 0.5*np.array([np.einsum('k,j,jk -> ', rdensshell[i], w_xcshell[i], S, optimize='greedy') for i in range(Nsk)])
 
     # Lambda functions for density and field functions.
     temps = [np.sum(rdensshell[i]*Gaussfunc) for i in range(Nsk)]
@@ -282,13 +282,12 @@ def GaussDensity(u, pvec, n, Ns, l, m, l_num, b, db, itermax, tol, realint, real
     print('Translational Entropy per Pair: {}'.format(repr(position_entropies1-elec_en)))
     print('Translational Entropy: {}'.format(np.sum(position_entropies1-elec_en)))
 
-    deci = 5
-    F_pair = -(U_ee_pair+U_xc_pair+U_p_pair)+F_ke_pair+U_nuc_pair
-    U_pair = U_ee_pair+U_xc_pair+U_p_pair+U_c_pair+U_nuc_pair
+    F_pair = -(U_ee_pair+U_xc_pair+U_p_pair)+F_ke_pair
+    U_pair = U_ee_pair+U_xc_pair+U_p_pair+U_c_pair
     print('Free Energy Terms:\n Kinetic: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3} \n Total: {a5}'.format(a0=repr(F_ke_pair), a1=repr(F_ee_pair), a2=repr(F_xc_pair), a3=repr(F_p_pair), a5=repr(F_pair)))
     print('Potential Energy Terms:\n Electron-Nucleus: {a0} \n Electron-Electron: {a1} \n Self-Interaction: {a2} \n Pauli: {a3} \n Total: {a5}'.format(a0=repr(U_c_pair), a1=repr(U_ee_pair), a2=repr(U_xc_pair), a3=repr(U_p_pair), a5=repr(U_pair)))
 
-    entropy = b*(kin_en+U_c-F_ee-F_xc-F_p-free)  # Total entropy.
+    entropy = b*(kin_en+np.sum(U_c_pair)-np.sum(F_ee_pair+F_xc_pair+F_p_pair)-np.sum(F_pair))  # Total entropy.
     print('Entropy: {}'.format(entropy))
 
     if np.all(np.isfinite([np.sum(F_pair), enum])) and np.all(np.isfinite(enums)):
